@@ -1,0 +1,66 @@
+# Builds NVidiaLogRemover-<tag>.7z and publishes it as a GitHub Release.
+#
+# Trigger: push a version tag, for example
+#   git tag v1.0.0
+#   git push origin v1.0.0
+#
+# The archive contains one "NVidiaLogRemover" folder with the two launchers, the two guides,
+# README.md and scripts\ (nothing else from the repository).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed to create the release and upload the archive
+
+jobs:
+  release:
+    # Windows runner: 7-Zip is preinstalled, and the .bat/.ps1 files keep their Windows line endings.
+    runs-on: windows-latest
+    env:
+      PACKAGE_NAME: NVidiaLogRemover
+      ARCHIVE: NVidiaLogRemover-${{ github.ref_name }}.7z
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Stage the release files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $env:RUNNER_TEMP $env:PACKAGE_NAME
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+
+          # Wildcards on purpose: the French file names contain a "ç".
+          $items = @(Get-ChildItem -Path *.bat, *.html, README.md) + @(Get-Item -Path scripts)
+          $expected = 6   # 2 launchers + 2 guides + README.md + scripts\
+          if ($items.Count -ne $expected) {
+              throw "Expected $expected items to package, found $($items.Count): $($items.Name -join ', ')"
+          }
+          foreach ($item in $items) { Copy-Item -LiteralPath $item.FullName -Destination $stage -Recurse }
+
+          Write-Host 'Files staged for the release:'
+          Get-ChildItem -LiteralPath $stage -Recurse -File | ForEach-Object { Write-Host "  $($_.FullName.Substring($stage.Length + 1))" }
+
+      - name: Build the 7z archive
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $env:RUNNER_TEMP $env:PACKAGE_NAME
+          7z a -t7z -mx=9 $env:ARCHIVE $stage
+          if ($LASTEXITCODE -ne 0) { throw "7z failed with exit code $LASTEXITCODE" }
+          7z t $env:ARCHIVE
+          if ($LASTEXITCODE -ne 0) { throw "7z test of the archive failed with exit code $LASTEXITCODE" }
+
+      - name: Publish the GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh release create $env:GITHUB_REF_NAME $env:ARCHIVE --title "$env:PACKAGE_NAME $env:GITHUB_REF_NAME" --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed with exit code $LASTEXITCODE" }

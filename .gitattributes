@@ -1,0 +1,9 @@
+# Windows scripts must keep CRLF line endings, whatever core.autocrlf is set to
+# (a .bat with LF endings can misbehave, and the release archive is built from the repository).
+*.bat   text eol=crlf
+*.ps1   text eol=crlf
+*.psd1  text eol=crlf
+
+# Images and archives are never converted.
+*.png   binary
+*.7z    binary

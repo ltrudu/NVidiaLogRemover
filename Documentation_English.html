@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NVIDIA Mission – The repair guide</title>
+<style>
+  :root {
+    --bg: #0f1226;
+    --bg2: #171b38;
+    --card: #1f2448;
+    --card2: #262c57;
+    --text: #eef0ff;
+    --muted: #aab0d6;
+    --green: #76e39b;
+    --green-dark: #2f9e5b;
+    --yellow: #ffd23f;
+    --orange: #ffa94d;
+    --red: #ff6b6b;
+    --blue: #6cb4ff;
+    --purple: #b48cff;
+    --radius: 18px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text);
+    background: radial-gradient(circle at 20% 0%, #2a2f6b 0%, transparent 45%),
+                radial-gradient(circle at 90% 30%, #3b1f5e 0%, transparent 40%),
+                var(--bg);
+    min-height: 100vh;
+  }
+  a { color: var(--blue); }
+  code {
+    background: rgba(255, 255, 255, .08);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: .88em;
+    word-break: break-all;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-emoji {
+    font-size: 90px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, .4));
+  }
+  @keyframes float { 50% { transform: translateY(-14px) rotate(-4deg); } }
+  h1 {
+    font-size: clamp(32px, 6vw, 56px);
+    margin: 10px 0 8px;
+    background: linear-gradient(90deg, var(--green), var(--blue), var(--purple), var(--yellow));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 8s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% 0; } }
+  .subtitle { color: var(--muted); font-size: 21px; max-width: 700px; margin: 0 auto; }
+  .stars span {
+    position: absolute;
+    color: #fff;
+    opacity: .5;
+    animation: twinkle 2.5s ease-in-out infinite;
+  }
+  @keyframes twinkle { 50% { opacity: .1; transform: scale(.6); } }
+
+  .lang-switch {
+    position: absolute; top: 16px; right: 20px;
+    background: var(--card); color: var(--text);
+    padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: 15px;
+  }
+  .lang-switch:hover { background: var(--blue); color: #0b1030; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(15, 18, 38, .85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+  nav ul {
+    list-style: none;
+    margin: 0 auto;
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1100px;
+  }
+  nav a {
+    display: block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 15px;
+    background: var(--card);
+    transition: background .2s, transform .2s;
+  }
+  nav a:hover, nav a.active { background: var(--blue); color: #0b1030; transform: translateY(-2px); }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 980px; margin: 0 auto; padding: 20px; }
+  section {
+    background: linear-gradient(160deg, var(--card), var(--bg2));
+    border-radius: var(--radius);
+    padding: 30px 34px;
+    margin: 34px 0;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, .06);
+    scroll-margin-top: 80px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .6s, transform .6s;
+  }
+  section.visible { opacity: 1; transform: none; }
+  h2 { font-size: 30px; margin: 0 0 14px; display: flex; align-items: center; gap: 12px; }
+  h2 .badge {
+    font-size: 28px;
+    width: 52px; height: 52px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    background: var(--card2);
+    flex-shrink: 0;
+  }
+  h3 { margin: 22px 0 8px; color: var(--yellow); }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .tile {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    transition: transform .2s;
+  }
+  .tile:hover { transform: translateY(-5px) rotate(-1deg); }
+  .tile .big { font-size: 46px; display: block; }
+  .tile b { display: block; margin: 6px 0 2px; }
+  .tile small { color: var(--muted); font-size: 15px; }
+
+  .bubble {
+    background: rgba(108, 180, 255, .12);
+    border-left: 5px solid var(--blue);
+    padding: 14px 18px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+  }
+  .bubble.warn { background: rgba(255, 169, 77, .12); border-color: var(--orange); }
+  .bubble.good { background: rgba(118, 227, 155, .12); border-color: var(--green); }
+
+  /* ---------- Problem meter ---------- */
+  .meter-box { background: var(--bg); border-radius: 14px; padding: 20px; margin-top: 16px; }
+  .meter {
+    height: 34px;
+    border-radius: 999px;
+    background: #0a0c1c;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, .1);
+  }
+  .meter-fill {
+    height: 100%;
+    width: 5%;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+    background-size: 300% 100%;
+    border-radius: 999px;
+    transition: width 3s ease-in-out, background-position 3s;
+  }
+  .meter-label { display: flex; justify-content: space-between; margin-top: 8px; color: var(--muted); font-size: 15px; }
+  .meter-text { font-size: 22px; font-weight: bold; text-align: center; margin: 12px 0 0; min-height: 36px; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .fun-btn {
+    font: inherit;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 22px;
+    cursor: pointer;
+    color: #10142e;
+    background: var(--yellow);
+    box-shadow: 0 5px 0 #b58f12;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .fun-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b58f12; }
+  .fun-btn.green { background: var(--green); box-shadow: 0 5px 0 var(--green-dark); }
+
+  /* ---------- Steps ---------- */
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 14px 16px 14px 74px;
+    margin: 12px 0;
+    background: var(--card2);
+    border-radius: 14px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px; top: 50%;
+    transform: translateY(-50%);
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .file-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: #222;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  .uac {
+    display: inline-block;
+    background: #1b4fa0;
+    color: #fff;
+    padding: 2px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+
+  /* ---------- Mock window ---------- */
+  .mock-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .mock-wrap { grid-template-columns: 1fr; } }
+  .win {
+    background: #f0f0f0;
+    color: #111;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .win-title {
+    background: #fff;
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #555;
+    font-size: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  .win-body { padding: 12px 14px; }
+  .win h4 { margin: 0 0 8px; font-size: 18px; }
+  .st { font-weight: bold; margin: 3px 0; }
+  .st.g { color: #228b22; } .st.o { color: #d97706; } .st.r { color: #b22222; } .st.n { color: #777; }
+  .next { color: #4169e1; font-style: italic; margin: 8px 0; }
+  .wbtn {
+    font: inherit;
+    width: 100%;
+    background: #e1e1e1;
+    border: 1px solid #adadad;
+    padding: 8px 4px;
+    cursor: pointer;
+    border-radius: 2px;
+    color: #111;
+    transition: outline .1s;
+  }
+  .wbtn:hover { border-color: #0078d7; background: #e5f1fb; }
+  .wbtn.yellow { background: gold; }
+  .wbtn.selected { outline: 3px solid var(--purple); outline-offset: 1px; }
+  .wgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 4px; }
+  .wsmall { font-size: 11px; margin-top: 6px; }
+  .wshield { margin-top: 8px; cursor: pointer; font-size: 11px; border-radius: 4px; padding: 2px; }
+  .wshield:hover { background: #e5f1fb; }
+  .wshield .st { font-size: 11px; }
+  .wshield.selected { outline: 3px solid var(--purple); outline-offset: 1px; }
+  .wradio { padding: 1px 0 1px 10px; }
+  .wlog { background: #fff; border: 1px solid #aaa; height: 46px; margin-top: 8px; padding: 4px; font-size: 11px; color: #333; }
+  .explain {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 220px;
+    position: sticky;
+    top: 90px;
+    border: 2px dashed rgba(180, 140, 255, .4);
+  }
+  .explain .icon { font-size: 46px; display: block; }
+  .explain h4 { margin: 6px 0; font-size: 22px; color: var(--yellow); }
+  .pop { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(.9); opacity: .3; } 100% { transform: none; opacity: 1; } }
+
+  /* ---------- Colors legend ---------- */
+  .legend { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .legend div { padding: 14px; border-radius: 12px; background: var(--card2); border-top: 6px solid; }
+  .legend .lg { border-color: var(--green); } .legend .lo { border-color: var(--orange); }
+  .legend .lr { border-color: var(--red); } .legend .ly { border-color: var(--yellow); }
+
+  /* ---------- Yellow-button path ---------- */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 20px 0; }
+  .flow .node {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 12px 14px;
+    text-align: center;
+    width: 128px;
+    font-size: 15px;
+    transition: background .3s, transform .3s;
+  }
+  .flow .node span { font-size: 32px; display: block; }
+  .flow .node.on { background: var(--yellow); color: #10142e; transform: scale(1.08); }
+  .flow .arrow { font-size: 26px; color: var(--muted); }
+
+  /* ---------- Auto-cleanup modes ---------- */
+  .modes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 16px 0; }
+  .mode-card { background: var(--card2); border-radius: 16px; padding: 18px 20px; border-top: 6px solid; }
+  .mode-card.safe { border-color: var(--green); }
+  .mode-card.risky { border-color: var(--orange); }
+  .mode-card h4 { margin: 6px 0; font-size: 20px; }
+  .mode-card p { margin: 8px 0; font-size: 16px; }
+  .mode-icon { font-size: 42px; }
+  .tag { display: inline-block; padding: 2px 12px; border-radius: 999px; font-weight: bold; font-size: 14px; color: #10142e; }
+  .good-tag { background: var(--green); }
+  .warn-tag { background: var(--orange); }
+  .mode-try { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 16px; }
+  .mode-try label {
+    background: var(--card2);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mode-try input { accent-color: var(--yellow); width: 18px; height: 18px; }
+  .day { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 90px; }
+  .moment {
+    background: var(--card2);
+    border-radius: 12px;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 14px;
+    width: 112px;
+    animation: pop .4s ease both;
+  }
+  .moment span { display: block; font-size: 28px; }
+  .moment.check { background: var(--green-dark); }
+  .moment.danger { background: #a83232; animation: pop .4s ease both, shake .5s ease .5s 2; }
+  @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .day-arrow { color: var(--muted); font-size: 20px; }
+  .day-verdict { font-weight: bold; font-size: 19px; margin-top: 12px; }
+  .day-verdict.session { color: var(--green); }
+  .day-verdict.every { color: var(--orange); }
+  .day-verdict.off { color: var(--muted); }
+
+  /* ---------- FAQ ---------- */
+  details {
+    background: var(--card2);
+    border-radius: 12px;
+    margin: 10px 0;
+    padding: 4px 18px;
+  }
+  summary { cursor: pointer; font-weight: bold; padding: 10px 0; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "➕ "; }
+  details[open] summary::before { content: "➖ "; }
+  details p { margin-top: 0; }
+
+  /* ---------- Checklist ---------- */
+  .checklist { list-style: none; padding: 0; }
+  .checklist label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card2);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .checklist input { width: 26px; height: 26px; accent-color: var(--green); flex-shrink: 0; }
+  .checklist label.done { background: rgba(118, 227, 155, .18); text-decoration: line-through; color: var(--muted); }
+  .progress-line { height: 14px; background: #0a0c1c; border-radius: 999px; overflow: hidden; margin: 10px 0; }
+  .progress-line div { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .4s; }
+  .trophy { text-align: center; font-size: 22px; font-weight: bold; display: none; }
+  .trophy.show { display: block; animation: pop .5s ease; }
+  .trophy span { font-size: 80px; display: block; }
+
+  /* ---------- Adults ---------- */
+  .adults { background: linear-gradient(160deg, #23263d, #1a1c2e); }
+  .adults table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .adults td, .adults th { padding: 8px 10px; border-bottom: 1px solid rgba(255, 255, 255, .08); text-align: left; vertical-align: top; }
+  .adults th { color: var(--yellow); }
+
+  footer { text-align: center; color: var(--muted); padding: 30px 20px 50px; font-size: 15px; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    section { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<header>
+  <div class="stars" aria-hidden="true"></div>
+  <a class="lang-switch" href="Documentation_Français.html">🇫🇷 Version française</a>
+  <div class="hero-emoji" aria-hidden="true">🦸</div>
+  <h1>Mission: save your computer!</h1>
+  <p class="subtitle">The NVIDIA repair guide. Follow the steps, click the buttons, and become your PC's hero.</p>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#problem">🐘 The problem</a></li>
+    <li><a href="#before">🎒 Before</a></li>
+    <li><a href="#start">🚀 Start</a></li>
+    <li><a href="#window">🪟 The window</a></li>
+    <li><a href="#yellow">🟡 Yellow button</a></li>
+    <li><a href="#shield">🛡️ Auto cleanup</a></li>
+    <li><a href="#help">🆘 Stuck?</a></li>
+    <li><a href="#mission">🏆 My mission</a></li>
+    <li><a href="#adults">🧑‍🔧 Adults</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- ================= PROBLEM ================= -->
+  <section id="problem">
+    <h2><span class="badge">🐘</span> What is the problem?</h2>
+    <p>Your <b>NVIDIA</b> graphics card (the part that draws the pictures of your games) has a small program that writes a
+      <b>log</b>: it writes down everything that happens, like a diary.</p>
+    <p>With two versions of the driver, <b>621.14</b> and <b>621.24</b>, this log goes crazy: it copies everything again,
+      and again, and again. It can grow by <b>30 GB per hour of gaming</b>! It's as if someone rewrote a whole notebook
+      every time they added one line. 📓📓📓</p>
+    <div class="meter-box">
+      <div class="meter" aria-hidden="true"><div class="meter-fill" id="meterFill"></div></div>
+      <div class="meter-label"><span>Empty disk 😊</span><span>Full disk 😱</span></div>
+      <p class="meter-text" id="meterText" aria-live="polite">Click to see what happens…</p>
+      <div class="btn-row">
+        <button class="fun-btn" id="btnPlay">🎮 Play for 3 hours</button>
+        <button class="fun-btn green" id="btnFix">🧹 Repair</button>
+      </div>
+    </div>
+    <div class="bubble">💡 <b>The repair program</b> empties this giant log, removes the wrong driver and installs a good
+      driver, version <b>621.01</b>.</div>
+  </section>
+
+  <!-- ================= BEFORE ================= -->
+  <section id="before">
+    <h2><span class="badge">🎒</span> Before you start</h2>
+    <div class="grid">
+      <div class="tile"><span class="big">💾</span><b>Save your game</b><small>and close your games</small></div>
+      <div class="tile"><span class="big">🌐</span><b>Internet</b><small>you will download about 1 GB</small></div>
+      <div class="tile"><span class="big">🔌</span><b>Plug in the charger</b><small>if it's a laptop</small></div>
+      <div class="tile"><span class="big">🧑</span><b>An adult nearby</b><small>Windows may ask for a password</small></div>
+    </div>
+  </section>
+
+  <!-- ================= START ================= -->
+  <section id="start">
+    <h2><span class="badge">🚀</span> Start the program</h2>
+    <ol class="steps">
+      <li>Open the program's folder and <b>double-click</b> <span class="file-icon">⚙️ RUN_ME_English.bat</span></li>
+      <li>Windows asks: "Do you want to allow this app to make changes to your device?"
+        Click <span class="uac">Yes</span>. If a password is requested, call an adult.</li>
+      <li>The <b>"NVIDIA Repair"</b> window opens. 🎉 It immediately looks at the state of your computer.</li>
+    </ol>
+    <div class="bubble warn">⚠️ Don't move or rename the <b>scripts</b> folder: it must stay next to <b>RUN_ME_English.bat</b>.
+      That's where the program keeps its tools!</div>
+  </section>
+
+  <!-- ================= WINDOW ================= -->
+  <section id="window">
+    <h2><span class="badge">🪟</span> The window, button by button</h2>
+    <p>Here is a copy of the window. <b>Click any button or line</b> to find out what it does.
+      Nothing really happens here: it's just for practice! 🧪</p>
+    <div class="mock-wrap">
+      <div class="win" role="group" aria-label="Copy of the program window">
+        <div class="win-title"><span>🟩 NVIDIA Repair</span><span>— ☐ ✕</span></div>
+        <div class="win-body">
+          <h4>NVIDIA driver repair</h4>
+          <div class="st r" data-info="log" tabindex="0" role="button">NVIDIA log file: HUGE - current size 12.4 GB</div>
+          <div class="st r" data-info="driver" tabindex="0" role="button">NVIDIA driver: 621.14 - this is the WRONG driver</div>
+          <div class="st n" data-info="installer" tabindex="0" role="button">Right driver 621.01: not downloaded yet</div>
+          <div class="next" data-info="next" tabindex="0" role="button">Next step: click the yellow button to empty the huge log file.</div>
+          <div class="wsmall"><b>Click the YELLOW button: it is the next step.</b></div>
+          <div class="wgrid">
+            <button class="wbtn yellow" data-info="b1">1. Empty the log file</button>
+            <button class="wbtn" data-info="b2">2. Remove the wrong driver</button>
+            <button class="wbtn" data-info="b3">3. Download the right driver</button>
+            <button class="wbtn" data-info="b4">4. Install the right driver</button>
+            <button class="wbtn" data-info="b5">5. Delete the downloaded file</button>
+            <button class="wbtn" data-info="reboot">Restart the computer</button>
+          </div>
+          <div class="wshield" data-info="shield" tabindex="0" role="button">
+            <div class="st n">Automatic log cleanup (if larger than 200 MB):</div>
+            <div class="wradio">◉ Off</div>
+            <div class="wradio">○ When Windows starts and shuts down (recommended)</div>
+            <div class="wradio">○ Every 3 hours (careful: can crash a running game)</div>
+          </div>
+          <div class="wlog" data-info="history" tabindex="0" role="button">10:52:40 Hello! I'm looking at the computer...</div>
+          <div class="wgrid" style="margin-top:6px">
+            <button class="wbtn" data-info="refresh">Check again</button>
+            <button class="wbtn" data-info="close">Close</button>
+          </div>
+        </div>
+      </div>
+      <div class="explain" id="explain" aria-live="polite">
+        <span class="icon">👈</span>
+        <h4>Click on the window!</h4>
+        <p>Pick a button or a line, and I'll explain what it does.</p>
+      </div>
+    </div>
+
+    <h3>🎨 The colors mean something</h3>
+    <div class="legend">
+      <div class="lg"><b>🟢 Green</b><br>All good, nothing to do.</div>
+      <div class="lo"><b>🟠 Orange</b><br>Keep an eye on it, or a step is not finished.</div>
+      <div class="lr"><b>🔴 Red</b><br>Problem! It needs fixing.</div>
+      <div class="ly"><b>🟡 Yellow button</b><br>It's <u>the next button</u> to click.</div>
+    </div>
+  </section>
+
+  <!-- ================= YELLOW BUTTON ================= -->
+  <section id="yellow">
+    <h2><span class="badge">🟡</span> Follow the yellow button!</h2>
+    <p>The program is a <b>detective</b> 🕵️: every time it opens, and after every button you click, it checks where
+      you are. Is the log emptied? Is the wrong driver gone? Is the right driver downloaded? Installed?</p>
+    <p>Then it turns the button for the next step <b>yellow</b>, and the blue sentence tells you what to do.
+      You click the yellow button, read the messages, and click <b>OK</b> when asked.
+      Repeat until you see <b>"Everything is fixed!"</b> 🎉</p>
+    <div class="flow" id="flow">
+      <div class="node"><span>🧹</span>Empty the log</div><div class="arrow">➜</div>
+      <div class="node"><span>🗑️</span>Remove the wrong driver</div><div class="arrow">➜</div>
+      <div class="node"><span>🔄</span>Restart (if asked)</div><div class="arrow">➜</div>
+      <div class="node"><span>⬇️</span>Download the right one</div><div class="arrow">➜</div>
+      <div class="node"><span>📦</span>Install the right one</div><div class="arrow">➜</div>
+      <div class="node"><span>✨</span>Clean up</div>
+    </div>
+    <div class="btn-row"><button class="fun-btn" id="btnFlow">▶️ Show the yellow button's path</button></div>
+
+    <h3>🔄 If you need to restart</h3>
+    <ol class="steps">
+      <li>The program tells you to restart. The <b>"Restart the computer"</b> button turns yellow: click it.</li>
+      <li>When the computer is back on, run <span class="file-icon">⚙️ RUN_ME_English.bat</span> again and click <span class="uac">Yes</span>.</li>
+      <li>The program checks where you are and turns the next step <b>yellow</b>. It forgets nothing, even after a restart! 🧠</li>
+    </ol>
+
+    <h3>📦 While the driver installs</h3>
+    <div class="bubble warn">An <b>NVIDIA</b> window opens: click <b>OK</b>, accept, then <b>Next</b> each time,
+      and <b>Close</b> at the end. <br>🖥️ The screen may go <b>black for a few seconds</b>: that's normal, don't touch anything!</div>
+    <div class="bubble">⏳ The download is about <b>1 GB</b>. A progress bar shows how far it is.
+      It can take several minutes: go get a glass of water! 🥤</div>
+  </section>
+
+  <!-- ================= SHIELD ================= -->
+  <section id="shield">
+    <h2><span class="badge">🛡️</span> Automatic cleanup (the shield)</h2>
+    <p>You can turn on a <b>shield</b> that watches the log by itself, even when the program is closed.
+      If the log is larger than <b>200 MB</b>, it is deleted automatically. 🧹</p>
+    <p>At the bottom of the window, you choose <b>when</b> the shield works:</p>
+
+    <div class="modes">
+      <div class="mode-card safe">
+        <span class="mode-icon">🚪</span>
+        <h4>When Windows starts and shuts down</h4>
+        <span class="tag good-tag">✅ Recommended</span>
+        <p>The shield checks the log when the computer <b>turns on</b>, when you <b>log in</b>,
+          and when you <b>shut down or restart</b> the computer.</p>
+        <p>👍 It <b>never works during a game</b>: your games are safe.</p>
+      </div>
+      <div class="mode-card risky">
+        <span class="mode-icon">⏰</span>
+        <h4>Every 3 hours</h4>
+        <span class="tag warn-tag">⚠️ Careful</span>
+        <p>The shield checks at start-up, then <b>every 3 hours</b>, even while you are playing.</p>
+        <p>😬 To empty the log, it has to <b>stop the NVIDIA service for a moment</b>. If that happens during a game,
+          the game can <b>freeze, flicker or crash</b>. The program will ask you to confirm this choice.</p>
+      </div>
+    </div>
+
+    <div class="bubble">🤔 <b>Which one should I pick?</b> Choose <b>"When Windows starts and shuts down"</b>.
+      The "every 3 hours" mode is only useful if the computer stays on for days without ever being shut down.</div>
+
+    <h3>🧪 Try it: pick a mode and look at your day</h3>
+    <div class="mode-try" role="radiogroup" aria-label="Choose an automatic cleanup mode">
+      <label><input type="radio" name="tryMode" value="off" checked> Off</label>
+      <label><input type="radio" name="tryMode" value="session"> When Windows starts and shuts down</label>
+      <label><input type="radio" name="tryMode" value="every"> Every 3 hours</label>
+    </div>
+    <div class="day" id="dayLine" aria-live="polite"></div>
+    <p class="day-verdict" id="dayVerdict"></p>
+  </section>
+
+  <!-- ================= HELP ================= -->
+  <section id="help">
+    <h2><span class="badge">🆘</span> If you get stuck</h2>
+    <details>
+      <summary>An "Oops, a problem" message appears</summary>
+      <p>Don't panic! Leave the window open and <b>call an adult</b>. Show them the message and the list
+        of actions at the bottom of the window.</p>
+    </details>
+    <details>
+      <summary>I clicked "No" instead of "Yes"</summary>
+      <p>No problem: run <b>RUN_ME_English.bat</b> again and click <b>Yes</b> this time.</p>
+    </details>
+    <details>
+      <summary>The download is very long or stuck</summary>
+      <p>Check that the computer is connected to the Internet (Wi-Fi). If the download stops, the program
+        shows a message. Then click <b>"3. Download the right driver"</b> again.</p>
+    </details>
+    <details>
+      <summary>The screen went black!</summary>
+      <p>While the driver installs, that's normal: the screen may flicker or go black for a few seconds.
+        Wait without touching anything. ⏳</p>
+    </details>
+    <details>
+      <summary>After the restart, the wrong driver came back</summary>
+      <p>Windows may have reinstalled it by itself. Run the program again and follow the <b>yellow button</b>:
+        it will have you install the right driver on top of it.</p>
+    </details>
+    <details>
+      <summary>The program says "Everything is fixed!"</summary>
+      <p>Well done, mission accomplished! 🎉 You can close the window. Remember to turn on the <b>automatic cleanup</b> ("When Windows starts and shuts down") if you haven't yet.</p>
+    </details>
+    <details>
+      <summary>I want to close the window while the program is working</summary>
+      <p>The program asks if you are sure. It's better to wait until it's finished, especially during an uninstall or an install.</p>
+    </details>
+  </section>
+
+  <!-- ================= MISSION ================= -->
+  <section id="mission">
+    <h2><span class="badge">🏆</span> My mission</h2>
+    <p>Tick each box when it's done. Your progress is kept, even if you close this page.</p>
+    <div class="progress-line" aria-hidden="true"><div id="missionBar"></div></div>
+    <ul class="checklist" id="checklist">
+      <li><label><input type="checkbox" data-id="save"> 💾 I saved and closed my games</label></li>
+      <li><label><input type="checkbox" data-id="launch"> 🚀 I ran RUN_ME_English.bat and clicked "Yes"</label></li>
+      <li><label><input type="checkbox" data-id="yellow"> 🟡 I followed the yellow button, step by step</label></li>
+      <li><label><input type="checkbox" data-id="reboot"> 🔄 I restarted and ran the program again (if asked)</label></li>
+      <li><label><input type="checkbox" data-id="done"> ✅ The program says "Everything is fixed!"</label></li>
+      <li><label><input type="checkbox" data-id="shield"> 🛡️ I chose "When Windows starts and shuts down" for the automatic cleanup</label></li>
+    </ul>
+    <div class="trophy" id="trophy" aria-live="polite"><span>🏆</span>Mission accomplished, super repairer!</div>
+    <div class="btn-row"><button class="fun-btn" id="btnReset">↩️ Start the mission again</button></div>
+  </section>
+
+  <!-- ================= ADULTS ================= -->
+  <section id="adults" class="adults">
+    <h2><span class="badge">🧑‍🔧</span> The adults' corner</h2>
+    <details>
+      <summary>Technical details (click to open)</summary>
+      <table>
+        <tr><th>Item</th><th>Detail</th></tr>
+        <tr><td>Log file</td><td><code>C:\ProgramData\NVIDIA Corporation\nvtopps\nct\nvlog.nvlgstg</code></td></tr>
+        <tr><td>Service</td><td>"NVIDIA Display Container LS" (<code>NVDisplay.ContainerLocalSystem</code>)</td></tr>
+        <tr><td>Faulty drivers</td><td>621.14 and 621.24</td></tr>
+        <tr><td>Replacement driver</td><td>621.01, downloaded from <code>us.download.nvidia.com</code>, NVIDIA Authenticode signature checked before installing</td></tr>
+        <tr><td>Files</td><td><code>RUN_ME_English.bat</code> (English) and <code>EXECUTE_MOI_Français.bat</code> (French) at the root (ask for admin rights, pass <code>-Language en|fr</code>). In <code>scripts\</code>: <code>NettoyageNvidia.ps1</code> (window),
+          <code>NettoyageJournalDemarrage.ps1</code> (automatic check), <code>messages.en.psd1</code> / <code>messages.fr.psd1</code> (texts). <code>README.md</code> (French + English) at the root.</td></tr>
+        <tr><td>Step 1</td><td>Stops the service, deletes the log, starts the service again</td></tr>
+        <tr><td>Step 2</td><td>Runs the NVIDIA uninstaller (registry key <code>*_Display.Driver</code>); otherwise opens "Programs and Features"</td></tr>
+        <tr><td>Steps 3 to 5</td><td>Download (BITS, curl as fallback) to <code>C:\ProgramData\NVidiaLogRemover\</code>, interactive install, then deletion of the file and of <code>C:\NVIDIA\DisplayDriver\621.01</code></td></tr>
+        <tr><td>Automatic cleanup</td><td>Scheduled task <code>NVidiaLogRemover-NettoyageDemarrage</code>, SYSTEM account, 200 MB threshold, two modes:
+          <b>Start/shut down</b> = triggers at boot (+1 min), at log-on (+1 min, covers Windows "Fast Startup") and on <code>User32</code> event 1074 (shutdown / restart requested; best effort, Windows may cut it short);
+          <b>Every 3 h</b> = boot (+1 min) then repeats every 3 h, including during a game (stopping the NVIDIA service = risk of the game freezing or crashing). Script copied to <code>C:\Program Files\NVidiaLogRemover\</code> (admin-only folder). The task's history lines use the language of the launcher that created it.</td></tr>
+        <tr><td>History</td><td><code>C:\ProgramData\NVidiaLogRemover\journal.txt</code></td></tr>
+        <tr><td>Settings</td><td><code>$Config</code> block at the top of <code>scripts\NettoyageNvidia.ps1</code> (versions, URL, <code>StartupThresholdMB</code>, <code>StartupRepeatHours</code>). After a change: choose the automatic cleanup mode again to recreate the task.</td></tr>
+        <tr><td>Texts</td><td><code>scripts\messages.en.psd1</code> and <code>scripts\messages.fr.psd1</code> (same keys), saved as UTF-8 <b>with BOM</b> (otherwise accents break in Windows PowerShell 5.1)</td></tr>
+      </table>
+    </details>
+  </section>
+</main>
+
+<footer>🦸 NVIDIA repair guide, made for 12-year-old heroes (and their parents).</footer>
+<script>
+(() => {
+  "use strict";
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STORAGE_KEY = "nvidiaMissionChecklistEn";
+
+  /* ---------- Twinkling stars in the header ---------- */
+  const STAR_COUNT = 25;
+  const stars = document.querySelector(".stars");
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const star = document.createElement("span");
+    star.textContent = Math.random() > .5 ? "✦" : "·";
+    star.style.left = Math.random() * 100 + "%";
+    star.style.top = Math.random() * 100 + "%";
+    star.style.fontSize = 8 + Math.random() * 16 + "px";
+    star.style.animationDelay = Math.random() * 3 + "s";
+    stars.appendChild(star);
+  }
+
+  /* ---------- Reveal sections on scroll + active nav link ---------- */
+  const sections = document.querySelectorAll("section");
+  const navLinks = document.querySelectorAll("nav a");
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("visible");
+      navLinks.forEach(link => link.classList.toggle("active", link.hash === "#" + entry.target.id));
+    });
+  }, { threshold: 0.01 });
+  sections.forEach(section => observer.observe(section));
+
+  /* ---------- Problem meter ---------- */
+  const meterFill = document.getElementById("meterFill");
+  const meterText = document.getElementById("meterText");
+  document.getElementById("btnPlay").addEventListener("click", () => {
+    meterFill.style.width = "96%";
+    meterFill.style.backgroundPosition = "100% 0";
+    meterText.textContent = "😱 After 3 hours of gaming: up to 90 GB of log! The disk is almost full!";
+  });
+  document.getElementById("btnFix").addEventListener("click", () => {
+    meterFill.style.width = "5%";
+    meterFill.style.backgroundPosition = "0 0";
+    meterText.textContent = "😎 Log emptied! The disk can breathe again.";
+  });
+
+  /* ---------- Mock window explanations ---------- */
+  const INFO = {
+    log:       ["📓", "The size of the log", "Here you see the size of the log file, updated every 2 seconds. Green: absent. Orange: present but small. Red: HUGE, it must be emptied."],
+    driver:    ["🎮", "The installed driver", "This is the NVIDIA driver version. If it's 621.14 or 621.24, it's written in red: it's a WRONG driver that must be removed."],
+    installer: ["📦", "The right driver", "Shows whether the right driver (621.01) is already downloaded on the computer."],
+    next:      ["🧭", "The compass", "This blue sentence always tells you what to do now. The program updates it after every button you click, and every time it opens."],
+    b1:        ["🧹", "1. Empty the log file", "Stops the NVIDIA service, deletes the huge log, then starts the service again. It frees space on the disk!"],
+    b2:        ["🗑️", "2. Remove the wrong driver", "Opens the NVIDIA uninstaller. Click \"Uninstall\" and wait. If it asks you to restart, choose \"later\" then come back to the program."],
+    b3:        ["⬇️", "3. Download the right driver", "Downloads driver 621.01 (about 1 GB). A bar shows the progress. The program then checks that the file really comes from NVIDIA."],
+    b4:        ["🛠️", "4. Install the right driver", "Starts the NVIDIA installer. Click OK, accept, then Next, and Close at the end. The screen may go black for a few seconds: that's normal!"],
+    b5:        ["✨", "5. Delete the downloaded file", "Once the right driver is installed, the downloaded file is useless. This button deletes it to free space."],
+    reboot:    ["🔄", "Restart the computer", "Restarts the computer. The program first asks if you saved your games. Afterwards, run RUN_ME_English.bat again."],
+    shield:    ["🛡️", "Automatic cleanup", "Choose when the shield empties the log (if larger than 200 MB), even when the window is closed. \"When Windows starts and shuts down\" is the safest. \"Every 3 hours\" can happen during a game and crash it: the program asks you to confirm."],
+    history:   ["📜", "The history", "Here the program writes everything it does, with the time. If an adult has to help you, show them this area."],
+    refresh:   ["🔍", "Check again", "Looks at the state of the computer once more and updates all the lines and the yellow button."],
+    close:     ["👋", "Close", "Closes the program. If it is working, it first asks if you are sure."]
+  };
+  const explain = document.getElementById("explain");
+  let selected = null;
+  function showInfo(element) {
+    const [icon, title, text] = INFO[element.dataset.info];
+    explain.innerHTML = "";
+    const iconEl = document.createElement("span"); iconEl.className = "icon"; iconEl.textContent = icon;
+    const titleEl = document.createElement("h4"); titleEl.textContent = title;
+    const textEl = document.createElement("p"); textEl.textContent = text;
+    explain.append(iconEl, titleEl, textEl);
+    explain.classList.remove("pop"); void explain.offsetWidth; explain.classList.add("pop");
+    if (selected) selected.classList.remove("selected");
+    element.classList.add("selected");
+    selected = element;
+  }
+  document.querySelectorAll("[data-info]").forEach(element => {
+    element.addEventListener("click", () => showInfo(element));
+    element.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); showInfo(element); }
+    });
+  });
+
+  /* ---------- Automatic mode animation ---------- */
+  const FLOW_STEP_MS = 900;
+  const nodes = document.querySelectorAll("#flow .node");
+  let flowTimer = null;
+  document.getElementById("btnFlow").addEventListener("click", () => {
+    clearInterval(flowTimer);
+    nodes.forEach(node => node.classList.remove("on"));
+    let index = 0;
+    flowTimer = setInterval(() => {
+      if (index >= nodes.length) { clearInterval(flowTimer); launchConfetti(60); return; }
+      nodes[index++].classList.add("on");
+    }, FLOW_STEP_MS);
+  });
+
+  /* ---------- Auto-cleanup mode simulator ---------- */
+  // Each moment of the day: [icon, label, kind]. kind: "" normal, "check" safe cleanup, "danger" cleanup during a game.
+  const DAYS = {
+    off: {
+      moments: [["🖥️", "Power on", ""], ["🎮", "Game", ""], ["🎮", "Another game", ""], ["⏹️", "Shut down", ""]],
+      verdict: "😴 Shield off: the log can grow and nobody empties it."
+    },
+    session: {
+      moments: [["🖥️", "Power on", ""], ["🧹", "Check", "check"], ["🎮", "Game", ""], ["🎮", "Another game", ""], ["🧹", "Check", "check"], ["⏹️", "Shut down", ""]],
+      verdict: "😎 The checks happen before and after your games: no risk for your games."
+    },
+    every: {
+      moments: [["🖥️", "Power on", ""], ["🧹", "Check", "check"], ["🎮", "Game", ""], ["💥", "Check DURING the game!", "danger"], ["🎮", "Another game", ""], ["⏹️", "Shut down", ""]],
+      verdict: "😬 A check happened in the middle of a game: the game may freeze or crash."
+    }
+  };
+  const dayLine = document.getElementById("dayLine");
+  const dayVerdict = document.getElementById("dayVerdict");
+  function showDay(mode) {
+    dayLine.innerHTML = "";
+    DAYS[mode].moments.forEach(([icon, label, kind], index) => {
+      if (index > 0) {
+        const arrow = document.createElement("span");
+        arrow.className = "day-arrow";
+        arrow.textContent = "➜";
+        dayLine.appendChild(arrow);
+      }
+      const moment = document.createElement("div");
+      moment.className = "moment " + kind;
+      moment.style.animationDelay = index * 0.12 + "s";
+      const iconEl = document.createElement("span");
+      iconEl.textContent = icon;
+      moment.append(iconEl, document.createTextNode(label));
+      dayLine.appendChild(moment);
+    });
+    dayVerdict.textContent = DAYS[mode].verdict;
+    dayVerdict.className = "day-verdict " + mode;
+  }
+  document.querySelectorAll('input[name="tryMode"]').forEach(radio => {
+    radio.addEventListener("change", () => showDay(radio.value));
+  });
+  showDay("off");
+
+  /* ---------- Mission checklist (saved in the browser) ---------- */
+  const boxes = document.querySelectorAll("#checklist input");
+  const trophy = document.getElementById("trophy");
+  const bar = document.getElementById("missionBar");
+  function loadChecklist() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+  }
+  function saveChecklist() {
+    const state = {};
+    boxes.forEach(box => { state[box.dataset.id] = box.checked; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage unavailable: progress is just not kept */ }
+  }
+  function updateChecklist(celebrate) {
+    const done = [...boxes].filter(box => box.checked).length;
+    boxes.forEach(box => box.closest("label").classList.toggle("done", box.checked));
+    bar.style.width = (done / boxes.length * 100) + "%";
+    const complete = done === boxes.length;
+    const wasShown = trophy.classList.contains("show");
+    trophy.classList.toggle("show", complete);
+    if (complete && !wasShown && celebrate) launchConfetti(180);
+  }
+  const saved = loadChecklist();
+  boxes.forEach(box => {
+    box.checked = Boolean(saved[box.dataset.id]);
+    box.addEventListener("change", () => { saveChecklist(); updateChecklist(true); });
+  });
+  updateChecklist(false);
+  document.getElementById("btnReset").addEventListener("click", () => {
+    boxes.forEach(box => { box.checked = false; });
+    saveChecklist();
+    updateChecklist(false);
+  });
+
+  /* ---------- Confetti ---------- */
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  const COLORS = ["#76e39b", "#ffd23f", "#6cb4ff", "#b48cff", "#ff6b6b", "#ffa94d"];
+  const GRAVITY = 0.12;
+  let pieces = [];
+  let animating = false;
+  function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+  function launchConfetti(count) {
+    if (reducedMotion) return;
+    for (let i = 0; i < count; i++) {
+      pieces.push({
+        x: canvas.width / 2, y: canvas.height / 3,
+        vx: (Math.random() - .5) * 16, vy: Math.random() * -12 - 4,
+        size: 6 + Math.random() * 8, rot: Math.random() * Math.PI, spin: (Math.random() - .5) * .3,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      });
+    }
+    if (!animating) { animating = true; requestAnimationFrame(drawConfetti); }
+  }
+  function drawConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.vy += GRAVITY; p.x += p.vx; p.y += p.vy; p.rot += p.spin; p.vx *= .99;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      ctx.restore();
+    });
+    pieces = pieces.filter(p => p.y < canvas.height + 30);
+    if (pieces.length) requestAnimationFrame(drawConfetti);
+    else { animating = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+})();
+</script>
+</body>
+</html>

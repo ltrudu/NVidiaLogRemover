@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission NVIDIA – Le guide du réparateur</title>
+<style>
+  :root {
+    --bg: #0f1226;
+    --bg2: #171b38;
+    --card: #1f2448;
+    --card2: #262c57;
+    --text: #eef0ff;
+    --muted: #aab0d6;
+    --green: #76e39b;
+    --green-dark: #2f9e5b;
+    --yellow: #ffd23f;
+    --orange: #ffa94d;
+    --red: #ff6b6b;
+    --blue: #6cb4ff;
+    --purple: #b48cff;
+    --radius: 18px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Trebuchet MS", system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text);
+    background: radial-gradient(circle at 20% 0%, #2a2f6b 0%, transparent 45%),
+                radial-gradient(circle at 90% 30%, #3b1f5e 0%, transparent 40%),
+                var(--bg);
+    min-height: 100vh;
+  }
+  a { color: var(--blue); }
+  code {
+    background: rgba(255, 255, 255, .08);
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: .88em;
+    word-break: break-all;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-emoji {
+    font-size: 90px;
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, .4));
+  }
+  @keyframes float { 50% { transform: translateY(-14px) rotate(-4deg); } }
+  h1 {
+    font-size: clamp(32px, 6vw, 56px);
+    margin: 10px 0 8px;
+    background: linear-gradient(90deg, var(--green), var(--blue), var(--purple), var(--yellow));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shine 8s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% 0; } }
+  .subtitle { color: var(--muted); font-size: 21px; max-width: 700px; margin: 0 auto; }
+  .stars span {
+    position: absolute;
+    color: #fff;
+    opacity: .5;
+    animation: twinkle 2.5s ease-in-out infinite;
+  }
+  @keyframes twinkle { 50% { opacity: .1; transform: scale(.6); } }
+
+  .lang-switch {
+    position: absolute; top: 16px; right: 20px;
+    background: var(--card); color: var(--text);
+    padding: 6px 14px; border-radius: 999px; text-decoration: none; font-size: 15px;
+  }
+  .lang-switch:hover { background: var(--blue); color: #0b1030; }
+
+  /* ---------- Nav ---------- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(15, 18, 38, .85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+  }
+  nav ul {
+    list-style: none;
+    margin: 0 auto;
+    padding: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1100px;
+  }
+  nav a {
+    display: block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 15px;
+    background: var(--card);
+    transition: background .2s, transform .2s;
+  }
+  nav a:hover, nav a.active { background: var(--blue); color: #0b1030; transform: translateY(-2px); }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 980px; margin: 0 auto; padding: 20px; }
+  section {
+    background: linear-gradient(160deg, var(--card), var(--bg2));
+    border-radius: var(--radius);
+    padding: 30px 34px;
+    margin: 34px 0;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(255, 255, 255, .06);
+    scroll-margin-top: 80px;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .6s, transform .6s;
+  }
+  section.visible { opacity: 1; transform: none; }
+  h2 { font-size: 30px; margin: 0 0 14px; display: flex; align-items: center; gap: 12px; }
+  h2 .badge {
+    font-size: 28px;
+    width: 52px; height: 52px;
+    display: grid; place-items: center;
+    border-radius: 14px;
+    background: var(--card2);
+    flex-shrink: 0;
+  }
+  h3 { margin: 22px 0 8px; color: var(--yellow); }
+
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .tile {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    transition: transform .2s;
+  }
+  .tile:hover { transform: translateY(-5px) rotate(-1deg); }
+  .tile .big { font-size: 46px; display: block; }
+  .tile b { display: block; margin: 6px 0 2px; }
+  .tile small { color: var(--muted); font-size: 15px; }
+
+  .bubble {
+    background: rgba(108, 180, 255, .12);
+    border-left: 5px solid var(--blue);
+    padding: 14px 18px;
+    border-radius: 0 12px 12px 0;
+    margin: 16px 0;
+  }
+  .bubble.warn { background: rgba(255, 169, 77, .12); border-color: var(--orange); }
+  .bubble.good { background: rgba(118, 227, 155, .12); border-color: var(--green); }
+
+  /* ---------- Problem meter ---------- */
+  .meter-box { background: var(--bg); border-radius: 14px; padding: 20px; margin-top: 16px; }
+  .meter {
+    height: 34px;
+    border-radius: 999px;
+    background: #0a0c1c;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, .1);
+  }
+  .meter-fill {
+    height: 100%;
+    width: 5%;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+    background-size: 300% 100%;
+    border-radius: 999px;
+    transition: width 3s ease-in-out, background-position 3s;
+  }
+  .meter-label { display: flex; justify-content: space-between; margin-top: 8px; color: var(--muted); font-size: 15px; }
+  .meter-text { font-size: 22px; font-weight: bold; text-align: center; margin: 12px 0 0; min-height: 36px; }
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 14px; }
+  .fun-btn {
+    font: inherit;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 22px;
+    cursor: pointer;
+    color: #10142e;
+    background: var(--yellow);
+    box-shadow: 0 5px 0 #b58f12;
+    transition: transform .1s, box-shadow .1s;
+  }
+  .fun-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #b58f12; }
+  .fun-btn.green { background: var(--green); box-shadow: 0 5px 0 var(--green-dark); }
+
+  /* ---------- Steps ---------- */
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 14px 16px 14px 74px;
+    margin: 12px 0;
+    background: var(--card2);
+    border-radius: 14px;
+  }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px; top: 50%;
+    transform: translateY(-50%);
+    width: 42px; height: 42px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .file-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    color: #222;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  .uac {
+    display: inline-block;
+    background: #1b4fa0;
+    color: #fff;
+    padding: 2px 16px;
+    border-radius: 6px;
+    font-weight: bold;
+  }
+
+  /* ---------- Mock window ---------- */
+  .mock-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .mock-wrap { grid-template-columns: 1fr; } }
+  .win {
+    background: #f0f0f0;
+    color: #111;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .win-title {
+    background: #fff;
+    padding: 6px 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #555;
+    font-size: 12px;
+    border-bottom: 1px solid #ddd;
+  }
+  .win-body { padding: 12px 14px; }
+  .win h4 { margin: 0 0 8px; font-size: 18px; }
+  .st { font-weight: bold; margin: 3px 0; }
+  .st.g { color: #228b22; } .st.o { color: #d97706; } .st.r { color: #b22222; } .st.n { color: #777; }
+  .next { color: #4169e1; font-style: italic; margin: 8px 0; }
+  .wbtn {
+    font: inherit;
+    width: 100%;
+    background: #e1e1e1;
+    border: 1px solid #adadad;
+    padding: 8px 4px;
+    cursor: pointer;
+    border-radius: 2px;
+    color: #111;
+    transition: outline .1s;
+  }
+  .wbtn:hover { border-color: #0078d7; background: #e5f1fb; }
+  .wbtn.yellow { background: gold; }
+  .wbtn.selected { outline: 3px solid var(--purple); outline-offset: 1px; }
+  .wgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 4px; }
+  .wsmall { font-size: 11px; margin-top: 6px; }
+  .wshield { margin-top: 8px; cursor: pointer; font-size: 11px; border-radius: 4px; padding: 2px; }
+  .wshield:hover { background: #e5f1fb; }
+  .wshield .st { font-size: 11px; }
+  .wshield.selected { outline: 3px solid var(--purple); outline-offset: 1px; }
+  .wradio { padding: 1px 0 1px 10px; }
+  .wlog { background: #fff; border: 1px solid #aaa; height: 46px; margin-top: 8px; padding: 4px; font-size: 11px; color: #333; }
+  .explain {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 220px;
+    position: sticky;
+    top: 90px;
+    border: 2px dashed rgba(180, 140, 255, .4);
+  }
+  .explain .icon { font-size: 46px; display: block; }
+  .explain h4 { margin: 6px 0; font-size: 22px; color: var(--yellow); }
+  .pop { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(.9); opacity: .3; } 100% { transform: none; opacity: 1; } }
+
+  /* ---------- Colors legend ---------- */
+  .legend { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .legend div { padding: 14px; border-radius: 12px; background: var(--card2); border-top: 6px solid; }
+  .legend .lg { border-color: var(--green); } .legend .lo { border-color: var(--orange); }
+  .legend .lr { border-color: var(--red); } .legend .ly { border-color: var(--yellow); }
+
+  /* ---------- Yellow-button path ---------- */
+  .flow { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 20px 0; }
+  .flow .node {
+    background: var(--card2);
+    border-radius: 14px;
+    padding: 12px 14px;
+    text-align: center;
+    width: 128px;
+    font-size: 15px;
+    transition: background .3s, transform .3s;
+  }
+  .flow .node span { font-size: 32px; display: block; }
+  .flow .node.on { background: var(--yellow); color: #10142e; transform: scale(1.08); }
+  .flow .arrow { font-size: 26px; color: var(--muted); }
+
+  /* ---------- Auto-cleanup modes ---------- */
+  .modes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); margin: 16px 0; }
+  .mode-card { background: var(--card2); border-radius: 16px; padding: 18px 20px; border-top: 6px solid; }
+  .mode-card.safe { border-color: var(--green); }
+  .mode-card.risky { border-color: var(--orange); }
+  .mode-card h4 { margin: 6px 0; font-size: 20px; }
+  .mode-card p { margin: 8px 0; font-size: 16px; }
+  .mode-icon { font-size: 42px; }
+  .tag { display: inline-block; padding: 2px 12px; border-radius: 999px; font-weight: bold; font-size: 14px; color: #10142e; }
+  .good-tag { background: var(--green); }
+  .warn-tag { background: var(--orange); }
+  .mode-try { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 16px; }
+  .mode-try label {
+    background: var(--card2);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .mode-try input { accent-color: var(--yellow); width: 18px; height: 18px; }
+  .day { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 90px; }
+  .moment {
+    background: var(--card2);
+    border-radius: 12px;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 14px;
+    width: 112px;
+    animation: pop .4s ease both;
+  }
+  .moment span { display: block; font-size: 28px; }
+  .moment.check { background: var(--green-dark); }
+  .moment.danger { background: #a83232; animation: pop .4s ease both, shake .5s ease .5s 2; }
+  @keyframes shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .day-arrow { color: var(--muted); font-size: 20px; }
+  .day-verdict { font-weight: bold; font-size: 19px; margin-top: 12px; }
+  .day-verdict.session { color: var(--green); }
+  .day-verdict.every { color: var(--orange); }
+  .day-verdict.off { color: var(--muted); }
+
+  /* ---------- FAQ ---------- */
+  details {
+    background: var(--card2);
+    border-radius: 12px;
+    margin: 10px 0;
+    padding: 4px 18px;
+  }
+  summary { cursor: pointer; font-weight: bold; padding: 10px 0; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "➕ "; }
+  details[open] summary::before { content: "➖ "; }
+  details p { margin-top: 0; }
+
+  /* ---------- Checklist ---------- */
+  .checklist { list-style: none; padding: 0; }
+  .checklist label {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--card2);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin: 8px 0;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .checklist input { width: 26px; height: 26px; accent-color: var(--green); flex-shrink: 0; }
+  .checklist label.done { background: rgba(118, 227, 155, .18); text-decoration: line-through; color: var(--muted); }
+  .progress-line { height: 14px; background: #0a0c1c; border-radius: 999px; overflow: hidden; margin: 10px 0; }
+  .progress-line div { height: 100%; width: 0; background: linear-gradient(90deg, var(--blue), var(--green)); transition: width .4s; }
+  .trophy { text-align: center; font-size: 22px; font-weight: bold; display: none; }
+  .trophy.show { display: block; animation: pop .5s ease; }
+  .trophy span { font-size: 80px; display: block; }
+
+  /* ---------- Adults ---------- */
+  .adults { background: linear-gradient(160deg, #23263d, #1a1c2e); }
+  .adults table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .adults td, .adults th { padding: 8px 10px; border-bottom: 1px solid rgba(255, 255, 255, .08); text-align: left; vertical-align: top; }
+  .adults th { color: var(--yellow); }
+
+  footer { text-align: center; color: var(--muted); padding: 30px 20px 50px; font-size: 15px; }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    section { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<header>
+  <div class="stars" aria-hidden="true"></div>
+  <a class="lang-switch" href="Documentation_English.html">🇬🇧 English version</a>
+  <div class="hero-emoji" aria-hidden="true">🦸</div>
+  <h1>Mission : sauver ton ordinateur !</h1>
+  <p class="subtitle">Le guide du réparateur NVIDIA. Suis les étapes, clique sur les boutons, et deviens le héros de ton PC.</p>
+</header>
+
+<nav>
+  <ul>
+    <li><a href="#probleme">🐘 Le problème</a></li>
+    <li><a href="#avant">🎒 Avant</a></li>
+    <li><a href="#lancer">🚀 Lancer</a></li>
+    <li><a href="#fenetre">🪟 La fenêtre</a></li>
+    <li><a href="#jaune">🟡 Bouton jaune</a></li>
+    <li><a href="#bouclier">🛡️ Nettoyage auto</a></li>
+    <li><a href="#aide">🆘 Ça coince ?</a></li>
+    <li><a href="#mission">🏆 Ma mission</a></li>
+    <li><a href="#adultes">🧑‍🔧 Adultes</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <!-- ================= PROBLEM ================= -->
+  <section id="probleme">
+    <h2><span class="badge">🐘</span> C'est quoi le problème ?</h2>
+    <p>Ta carte graphique <b>NVIDIA</b> (la pièce qui dessine les images de tes jeux) a un petit programme qui écrit un
+      <b>journal</b> : il note tout ce qui se passe, comme un journal intime.</p>
+    <p>Avec deux versions du pilote, la <b>621.14</b> et la <b>621.24</b>, ce journal devient fou : il recopie tout,
+      encore et encore. Il peut grossir de <b>30 Go par heure de jeu</b> ! C'est comme si quelqu'un réécrivait tout un cahier
+      à chaque fois qu'il ajoute une ligne. 📓📓📓</p>
+    <div class="meter-box">
+      <div class="meter" aria-hidden="true"><div class="meter-fill" id="meterFill"></div></div>
+      <div class="meter-label"><span>Disque vide 😊</span><span>Disque plein 😱</span></div>
+      <p class="meter-text" id="meterText" aria-live="polite">Clique pour voir ce qui se passe…</p>
+      <div class="btn-row">
+        <button class="fun-btn" id="btnPlay">🎮 Jouer 3 heures</button>
+        <button class="fun-btn green" id="btnFix">🧹 Réparer</button>
+      </div>
+    </div>
+    <div class="bubble">💡 <b>Le programme de réparation</b> vide ce journal géant, enlève le mauvais pilote et installe un bon
+      pilote, la version <b>621.01</b>.</div>
+  </section>
+
+  <!-- ================= BEFORE ================= -->
+  <section id="avant">
+    <h2><span class="badge">🎒</span> Avant de commencer</h2>
+    <div class="grid">
+      <div class="tile"><span class="big">💾</span><b>Sauvegarde ta partie</b><small>et ferme tes jeux</small></div>
+      <div class="tile"><span class="big">🌐</span><b>Internet</b><small>il faudra télécharger environ 1 Go</small></div>
+      <div class="tile"><span class="big">🔌</span><b>Branche le chargeur</b><small>si c'est un ordinateur portable</small></div>
+      <div class="tile"><span class="big">🧑</span><b>Un adulte pas loin</b><small>Windows peut demander un mot de passe</small></div>
+    </div>
+  </section>
+
+  <!-- ================= LAUNCH ================= -->
+  <section id="lancer">
+    <h2><span class="badge">🚀</span> Lancer le programme</h2>
+    <ol class="steps">
+      <li>Ouvre le dossier du programme et <b>double-clique</b> sur <span class="file-icon">⚙️ EXECUTE_MOI_Français.bat</span></li>
+      <li>Windows demande : « Voulez-vous autoriser cette application à apporter des modifications ? »
+        Clique sur <span class="uac">Oui</span>. Si un mot de passe est demandé, appelle un adulte.</li>
+      <li>La fenêtre <b>« Réparation NVIDIA »</b> s'ouvre. 🎉 Elle regarde tout de suite l'état de ton ordinateur.</li>
+    </ol>
+    <div class="bubble warn">⚠️ Ne déplace pas et ne renomme pas le dossier <b>scripts</b> : il doit rester à côté de <b>EXECUTE_MOI_Français.bat</b>.
+      C'est là que le programme range ses outils !</div>
+  </section>
+
+  <!-- ================= WINDOW ================= -->
+  <section id="fenetre">
+    <h2><span class="badge">🪟</span> La fenêtre, bouton par bouton</h2>
+    <p>Voici une copie de la fenêtre. <b>Clique sur n'importe quel bouton ou ligne</b> pour savoir à quoi il sert.
+      Ici, rien ne se passe pour de vrai : c'est pour s'entraîner ! 🧪</p>
+    <div class="mock-wrap">
+      <div class="win" role="group" aria-label="Copie de la fenêtre du programme">
+        <div class="win-title"><span>🟩 Réparation NVIDIA</span><span>— ☐ ✕</span></div>
+        <div class="win-body">
+          <h4>Réparation du pilote NVIDIA</h4>
+          <div class="st r" data-info="log" tabindex="0" role="button">Fichier journal NVIDIA : TRÈS GROS - taille actuelle 12,4 Go</div>
+          <div class="st r" data-info="driver" tabindex="0" role="button">Pilote NVIDIA : 621.14 - c'est le MAUVAIS pilote</div>
+          <div class="st n" data-info="installer" tabindex="0" role="button">Bon pilote 621.01 : pas encore téléchargé</div>
+          <div class="next" data-info="next" tabindex="0" role="button">À faire maintenant : clique sur le bouton jaune pour vider le gros fichier journal.</div>
+          <div class="wsmall"><b>Clique sur le bouton JAUNE : c'est la prochaine étape.</b></div>
+          <div class="wgrid">
+            <button class="wbtn yellow" data-info="b1">1. Vider le fichier journal</button>
+            <button class="wbtn" data-info="b2">2. Enlever le mauvais pilote</button>
+            <button class="wbtn" data-info="b3">3. Télécharger le bon pilote</button>
+            <button class="wbtn" data-info="b4">4. Installer le bon pilote</button>
+            <button class="wbtn" data-info="b5">5. Supprimer le fichier téléchargé</button>
+            <button class="wbtn" data-info="reboot">Redémarrer l'ordinateur</button>
+          </div>
+          <div class="wshield" data-info="shield" tabindex="0" role="button">
+            <div class="st n">Nettoyage auto du fichier journal (s'il dépasse 200 Mo) :</div>
+            <div class="wradio">◉ Désactivé</div>
+            <div class="wradio">○ À l'ouverture et à la fermeture de Windows (conseillé)</div>
+            <div class="wradio">○ Toutes les 3 heures (attention : peut faire planter un jeu en cours)</div>
+          </div>
+          <div class="wlog" data-info="history" tabindex="0" role="button">10:52:40 Bonjour ! Je regarde l'état de l'ordinateur...</div>
+          <div class="wgrid" style="margin-top:6px">
+            <button class="wbtn" data-info="refresh">Vérifier à nouveau</button>
+            <button class="wbtn" data-info="close">Fermer</button>
+          </div>
+        </div>
+      </div>
+      <div class="explain" id="explain" aria-live="polite">
+        <span class="icon">👈</span>
+        <h4>Clique sur la fenêtre !</h4>
+        <p>Choisis un bouton ou une ligne, et je t'explique à quoi il sert.</p>
+      </div>
+    </div>
+
+    <h3>🎨 Les couleurs veulent dire quelque chose</h3>
+    <div class="legend">
+      <div class="lg"><b>🟢 Vert</b><br>Tout va bien, rien à faire.</div>
+      <div class="lo"><b>🟠 Orange</b><br>À surveiller, ou une étape n'est pas finie.</div>
+      <div class="lr"><b>🔴 Rouge</b><br>Problème ! Il faut réparer.</div>
+      <div class="ly"><b>🟡 Bouton jaune</b><br>C'est <u>le prochain bouton</u> à cliquer.</div>
+    </div>
+  </section>
+
+  <!-- ================= YELLOW BUTTON ================= -->
+  <section id="jaune">
+    <h2><span class="badge">🟡</span> Suis le bouton jaune !</h2>
+    <p>Le programme est un <b>détective</b> 🕵️ : à chaque fois qu'il s'ouvre, et après chaque bouton cliqué, il regarde où
+      tu en es. Le journal est-il vidé ? Le mauvais pilote est-il parti ? Le bon pilote est-il téléchargé ? Installé ?</p>
+    <p>Ensuite, il met <b>en jaune</b> le bouton de la prochaine étape, et la phrase bleue te dit quoi faire.
+      Toi, tu cliques sur le bouton jaune, tu lis les messages, et tu cliques sur <b>OK</b> quand il te le demande.
+      Tu recommences jusqu'à voir <b>« Tout est réparé ! »</b> 🎉</p>
+    <div class="flow" id="flow">
+      <div class="node"><span>🧹</span>Vider le journal</div><div class="arrow">➜</div>
+      <div class="node"><span>🗑️</span>Enlever le mauvais pilote</div><div class="arrow">➜</div>
+      <div class="node"><span>🔄</span>Redémarrer (si demandé)</div><div class="arrow">➜</div>
+      <div class="node"><span>⬇️</span>Télécharger le bon</div><div class="arrow">➜</div>
+      <div class="node"><span>📦</span>Installer le bon</div><div class="arrow">➜</div>
+      <div class="node"><span>✨</span>Faire le ménage</div>
+    </div>
+    <div class="btn-row"><button class="fun-btn" id="btnFlow">▶️ Voir le chemin du bouton jaune</button></div>
+
+    <h3>🔄 S'il faut redémarrer</h3>
+    <ol class="steps">
+      <li>Le programme te dit qu'il faut redémarrer. Le bouton <b>« Redémarrer l'ordinateur »</b> devient jaune : clique dessus.</li>
+      <li>Quand l'ordinateur est rallumé, relance <span class="file-icon">⚙️ EXECUTE_MOI_Français.bat</span> et clique sur <span class="uac">Oui</span>.</li>
+      <li>Le programme regarde où tu en es et met <b>en jaune</b> la prochaine étape. Il n'oublie rien, même après un redémarrage ! 🧠</li>
+    </ol>
+
+    <h3>📦 Pendant l'installation du pilote</h3>
+    <div class="bubble warn">Une fenêtre <b>NVIDIA</b> s'ouvre : clique sur <b>OK</b>, accepte, puis <b>Suivant</b> à chaque fois,
+      et <b>Fermer</b> à la fin. <br>🖥️ L'écran peut devenir <b>noir quelques secondes</b> : c'est normal, ne touche à rien !</div>
+    <div class="bubble">⏳ Le téléchargement fait environ <b>1 Go</b>. Une barre de progression montre où il en est.
+      Ça peut prendre plusieurs minutes : va boire un verre d'eau ! 🥤</div>
+  </section>
+
+  <!-- ================= SHIELD ================= -->
+  <section id="bouclier">
+    <h2><span class="badge">🛡️</span> Le nettoyage auto (le bouclier)</h2>
+    <p>Tu peux activer un <b>bouclier</b> qui surveille le journal tout seul, même quand le programme est fermé.
+      Si le journal dépasse <b>200 Mo</b>, il est supprimé automatiquement. 🧹</p>
+    <p>Dans la fenêtre, en bas, tu choisis <b>quand</b> le bouclier travaille :</p>
+
+    <div class="modes">
+      <div class="mode-card safe">
+        <span class="mode-icon">🚪</span>
+        <h4>À l'ouverture et à la fermeture de Windows</h4>
+        <span class="tag good-tag">✅ Conseillé</span>
+        <p>Le bouclier vérifie le journal quand l'ordinateur <b>s'allume</b>, quand tu <b>ouvres ta session</b>,
+          et quand tu <b>éteins ou redémarres</b> l'ordinateur.</p>
+        <p>👍 Il ne travaille <b>jamais pendant une partie</b> : tes jeux sont tranquilles.</p>
+      </div>
+      <div class="mode-card risky">
+        <span class="mode-icon">⏰</span>
+        <h4>Toutes les 3 heures</h4>
+        <span class="tag warn-tag">⚠️ Attention</span>
+        <p>Le bouclier vérifie au démarrage, puis <b>toutes les 3 heures</b>, même si tu es en train de jouer.</p>
+        <p>😬 Pour vider le journal, il doit <b>arrêter un instant le service NVIDIA</b>. Si ça tombe pendant une partie,
+          le jeu peut <b>se figer, clignoter ou planter</b>. Le programme te demandera de confirmer ce choix.</p>
+      </div>
+    </div>
+
+    <div class="bubble">🤔 <b>Lequel choisir ?</b> Prends <b>« À l'ouverture et à la fermeture de Windows »</b>.
+      Le mode « toutes les 3 heures » est seulement utile si l'ordinateur reste allumé des jours entiers sans jamais être éteint.</div>
+
+    <h3>🧪 Essaie : choisis un mode et regarde ta journée</h3>
+    <div class="mode-try" role="radiogroup" aria-label="Choisir un mode de nettoyage auto">
+      <label><input type="radio" name="tryMode" value="off" checked> Désactivé</label>
+      <label><input type="radio" name="tryMode" value="session"> À l'ouverture et à la fermeture de Windows</label>
+      <label><input type="radio" name="tryMode" value="every"> Toutes les 3 heures</label>
+    </div>
+    <div class="day" id="dayLine" aria-live="polite"></div>
+    <p class="day-verdict" id="dayVerdict"></p>
+  </section>
+
+  <!-- ================= HELP ================= -->
+  <section id="aide">
+    <h2><span class="badge">🆘</span> Si ça coince</h2>
+    <details>
+      <summary>Un message « Oups, un problème » s'affiche</summary>
+      <p>Pas de panique ! Laisse la fenêtre ouverte et <b>appelle un adulte</b>. Montre-lui le message et la liste
+        des actions en bas de la fenêtre.</p>
+    </details>
+    <details>
+      <summary>J'ai cliqué sur « Non » au lieu de « Oui »</summary>
+      <p>Ce n'est pas grave : relance <b>EXECUTE_MOI_Français.bat</b> et clique sur <b>Oui</b> cette fois.</p>
+    </details>
+    <details>
+      <summary>Le téléchargement est très long ou bloqué</summary>
+      <p>Vérifie que l'ordinateur est bien connecté à Internet (Wi-Fi). Si le téléchargement s'arrête, le programme
+        affiche un message. Reclique ensuite sur <b>« 3. Télécharger le bon pilote »</b>.</p>
+    </details>
+    <details>
+      <summary>L'écran est devenu noir !</summary>
+      <p>Pendant l'installation du pilote, c'est normal : l'écran peut clignoter ou devenir noir quelques secondes.
+        Attends sans rien toucher. ⏳</p>
+    </details>
+    <details>
+      <summary>Après le redémarrage, le mauvais pilote est revenu</summary>
+      <p>Windows l'a peut-être réinstallé tout seul. Relance le programme et suis le <b>bouton jaune</b> :
+        il te fera installer le bon pilote par-dessus.</p>
+    </details>
+    <details>
+      <summary>Le programme dit « Tout est réparé ! »</summary>
+      <p>Bravo, mission accomplie ! 🎉 Tu peux fermer la fenêtre. Pense à activer le <b>nettoyage auto</b> (« À l'ouverture et à la fermeture de Windows ») si ce n'est pas fait.</p>
+    </details>
+    <details>
+      <summary>Je veux fermer la fenêtre pendant que le programme travaille</summary>
+      <p>Le programme te demande si tu es sûr. Mieux vaut attendre la fin, surtout pendant une désinstallation ou une installation.</p>
+    </details>
+  </section>
+
+  <!-- ================= MISSION ================= -->
+  <section id="mission">
+    <h2><span class="badge">🏆</span> Ma mission</h2>
+    <p>Coche chaque case quand c'est fait. Ta progression est gardée, même si tu fermes cette page.</p>
+    <div class="progress-line" aria-hidden="true"><div id="missionBar"></div></div>
+    <ul class="checklist" id="checklist">
+      <li><label><input type="checkbox" data-id="save"> 💾 J'ai sauvegardé et fermé mes jeux</label></li>
+      <li><label><input type="checkbox" data-id="launch"> 🚀 J'ai lancé EXECUTE_MOI_Français.bat et cliqué sur « Oui »</label></li>
+      <li><label><input type="checkbox" data-id="yellow"> 🟡 J'ai suivi le bouton jaune, étape par étape</label></li>
+      <li><label><input type="checkbox" data-id="reboot"> 🔄 J'ai redémarré et relancé le programme (si c'était demandé)</label></li>
+      <li><label><input type="checkbox" data-id="done"> ✅ Le programme dit « Tout est réparé ! »</label></li>
+      <li><label><input type="checkbox" data-id="shield"> 🛡️ J'ai choisi « À l'ouverture et à la fermeture de Windows » pour le nettoyage auto</label></li>
+    </ul>
+    <div class="trophy" id="trophy" aria-live="polite"><span>🏆</span>Mission accomplie, super réparateur !</div>
+    <div class="btn-row"><button class="fun-btn" id="btnReset">↩️ Recommencer la mission</button></div>
+  </section>
+
+  <!-- ================= ADULTS ================= -->
+  <section id="adultes" class="adults">
+    <h2><span class="badge">🧑‍🔧</span> Le coin des adultes</h2>
+    <details>
+      <summary>Détails techniques (cliquer pour ouvrir)</summary>
+      <table>
+        <tr><th>Élément</th><th>Détail</th></tr>
+        <tr><td>Fichier journal</td><td><code>C:\ProgramData\NVIDIA Corporation\nvtopps\nct\nvlog.nvlgstg</code></td></tr>
+        <tr><td>Service concerné</td><td>« NVIDIA Display Container LS » (<code>NVDisplay.ContainerLocalSystem</code>)</td></tr>
+        <tr><td>Pilotes défectueux</td><td>621.14 et 621.24</td></tr>
+        <tr><td>Pilote de remplacement</td><td>621.01, téléchargé depuis <code>us.download.nvidia.com</code>, signature Authenticode NVIDIA vérifiée avant installation</td></tr>
+        <tr><td>Fichiers</td><td><code>EXECUTE_MOI_Français.bat</code> (français) et <code>RUN_ME_English.bat</code> (anglais) à la racine (demandent les droits admin, passent <code>-Language fr|en</code>). Dans <code>scripts\</code> : <code>NettoyageNvidia.ps1</code> (fenêtre),
+          <code>NettoyageJournalDemarrage.ps1</code> (vérification auto), <code>messages.fr.psd1</code> / <code>messages.en.psd1</code> (textes). <code>README.md</code> (français + anglais) à la racine.</td></tr>
+        <tr><td>Étape 1</td><td>Arrêt du service, suppression du journal, redémarrage du service</td></tr>
+        <tr><td>Étape 2</td><td>Lance le désinstalleur NVIDIA (clé de registre <code>*_Display.Driver</code>) ; à défaut, ouvre « Programmes et fonctionnalités »</td></tr>
+        <tr><td>Étapes 3 à 5</td><td>Téléchargement (BITS, puis curl en secours) dans <code>C:\ProgramData\NVidiaLogRemover\</code>, installation interactive, puis suppression du fichier et de <code>C:\NVIDIA\DisplayDriver\621.01</code></td></tr>
+        <tr><td>Nettoyage auto</td><td>Tâche planifiée <code>NVidiaLogRemover-NettoyageDemarrage</code>, compte SYSTEM, seuil 200 Mo, deux modes :
+          <b>Ouverture/fermeture</b> = déclencheurs démarrage (+1 min), ouverture de session (+1 min, couvre le « démarrage rapide » de Windows) et événement <code>User32</code> 1074 (arrêt / redémarrage demandé ; exécution au mieux, Windows peut couper avant la fin) ;
+          <b>Toutes les 3 h</b> = démarrage (+1 min) puis répétition toutes les 3 h, y compris pendant un jeu (arrêt du service NVIDIA = risque de gel ou de plantage du jeu). Script copié dans <code>C:\Program Files\NVidiaLogRemover\</code> (dossier réservé aux administrateurs)</td></tr>
+        <tr><td>Historique</td><td><code>C:\ProgramData\NVidiaLogRemover\journal.txt</code></td></tr>
+        <tr><td>Réglages</td><td>Bloc <code>$Config</code> en haut de <code>scripts\NettoyageNvidia.ps1</code> (versions, URL, <code>StartupThresholdMB</code>, <code>StartupRepeatHours</code>). Après modification : rechoisir le mode du nettoyage auto pour recréer la tâche.</td></tr>
+        <tr><td>Textes</td><td><code>scripts\messages.fr.psd1</code> et <code>scripts\messages.en.psd1</code> (mêmes clés), à enregistrer en UTF-8 <b>avec BOM</b> (sinon accents cassés sous Windows PowerShell 5.1)</td></tr>
+      </table>
+    </details>
+  </section>
+</main>
+
+<footer>🦸 Guide du réparateur NVIDIA, fait pour les héros de 12 ans (et leurs parents).</footer>
+
+<script>
+(() => {
+  "use strict";
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const STORAGE_KEY = "nvidiaMissionChecklist";
+
+  /* ---------- Twinkling stars in the header ---------- */
+  const STAR_COUNT = 25;
+  const stars = document.querySelector(".stars");
+  for (let i = 0; i < STAR_COUNT; i++) {
+    const star = document.createElement("span");
+    star.textContent = Math.random() > .5 ? "✦" : "·";
+    star.style.left = Math.random() * 100 + "%";
+    star.style.top = Math.random() * 100 + "%";
+    star.style.fontSize = 8 + Math.random() * 16 + "px";
+    star.style.animationDelay = Math.random() * 3 + "s";
+    stars.appendChild(star);
+  }
+
+  /* ---------- Reveal sections on scroll + active nav link ---------- */
+  const sections = document.querySelectorAll("section");
+  const navLinks = document.querySelectorAll("nav a");
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add("visible");
+      navLinks.forEach(link => link.classList.toggle("active", link.hash === "#" + entry.target.id));
+    });
+  }, { threshold: 0.01 });
+  sections.forEach(section => observer.observe(section));
+
+  /* ---------- Problem meter ---------- */
+  const meterFill = document.getElementById("meterFill");
+  const meterText = document.getElementById("meterText");
+  document.getElementById("btnPlay").addEventListener("click", () => {
+    meterFill.style.width = "96%";
+    meterFill.style.backgroundPosition = "100% 0";
+    meterText.textContent = "😱 Après 3 heures de jeu : jusqu'à 90 Go de journal ! Le disque est presque plein !";
+  });
+  document.getElementById("btnFix").addEventListener("click", () => {
+    meterFill.style.width = "5%";
+    meterFill.style.backgroundPosition = "0 0";
+    meterText.textContent = "😎 Journal vidé ! Le disque respire à nouveau.";
+  });
+
+  /* ---------- Mock window explanations ---------- */
+  const INFO = {
+    log:       ["📓", "La taille du journal", "Ici tu vois la taille du fichier journal, mise à jour toutes les 2 secondes. Vert : absent. Orange : présent mais petit. Rouge : TRÈS GROS, il faut le vider."],
+    driver:    ["🎮", "Le pilote installé", "C'est la version du pilote NVIDIA. Si c'est 621.14 ou 621.24, c'est écrit en rouge : c'est un MAUVAIS pilote qu'il faut enlever."],
+    installer: ["📦", "Le bon pilote", "Indique si le bon pilote (621.01) est déjà téléchargé sur l'ordinateur."],
+    next:      ["🧭", "La boussole", "Cette phrase bleue te dit toujours quoi faire maintenant. Le programme la met à jour après chaque bouton cliqué, et à chaque fois qu'il s'ouvre."],
+    b1:        ["🧹", "1. Vider le fichier journal", "Arrête le service NVIDIA, supprime le gros journal, puis redémarre le service. Ça libère de la place sur le disque !"],
+    b2:        ["🗑️", "2. Enlever le mauvais pilote", "Ouvre le désinstalleur NVIDIA. Clique sur « Désinstaller » et attends. S'il demande de redémarrer, choisis « plus tard » puis reviens dans le programme."],
+    b3:        ["⬇️", "3. Télécharger le bon pilote", "Télécharge le pilote 621.01 (environ 1 Go). Une barre montre la progression. Le programme vérifie ensuite que le fichier vient bien de NVIDIA."],
+    b4:        ["🛠️", "4. Installer le bon pilote", "Lance l'installation NVIDIA. Clique sur OK, accepte, puis Suivant, et Fermer à la fin. L'écran peut devenir noir quelques secondes : c'est normal !"],
+    b5:        ["✨", "5. Supprimer le fichier téléchargé", "Une fois le bon pilote installé, le fichier téléchargé ne sert plus à rien. Ce bouton le supprime pour libérer de la place."],
+    reboot:    ["🔄", "Redémarrer l'ordinateur", "Redémarre l'ordinateur. Le programme te demande d'abord si tu as bien sauvegardé tes jeux. Après, relance EXECUTE_MOI_Français.bat."],
+    shield:    ["🛡️", "Le nettoyage auto", "Choisis quand le bouclier vide le journal (s'il dépasse 200 Mo), même quand la fenêtre est fermée. « À l'ouverture et à la fermeture de Windows » est le plus sûr. « Toutes les 3 heures » peut tomber pendant un jeu et le faire planter : le programme te demande de confirmer."],
+    history:   ["📜", "L'historique", "Ici le programme écrit tout ce qu'il fait, avec l'heure. Si un adulte doit t'aider, montre-lui cette zone."],
+    refresh:   ["🔍", "Vérifier à nouveau", "Regarde encore une fois l'état de l'ordinateur et met à jour toutes les lignes et le bouton jaune."],
+    close:     ["👋", "Fermer", "Ferme le programme. S'il est en train de travailler, il te demande d'abord si tu es sûr."]
+  };
+  const explain = document.getElementById("explain");
+  let selected = null;
+  function showInfo(element) {
+    const [icon, title, text] = INFO[element.dataset.info];
+    explain.innerHTML = "";
+    const iconEl = document.createElement("span"); iconEl.className = "icon"; iconEl.textContent = icon;
+    const titleEl = document.createElement("h4"); titleEl.textContent = title;
+    const textEl = document.createElement("p"); textEl.textContent = text;
+    explain.append(iconEl, titleEl, textEl);
+    explain.classList.remove("pop"); void explain.offsetWidth; explain.classList.add("pop");
+    if (selected) selected.classList.remove("selected");
+    element.classList.add("selected");
+    selected = element;
+  }
+  document.querySelectorAll("[data-info]").forEach(element => {
+    element.addEventListener("click", () => showInfo(element));
+    element.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); showInfo(element); }
+    });
+  });
+
+  /* ---------- Automatic mode animation ---------- */
+  const FLOW_STEP_MS = 900;
+  const nodes = document.querySelectorAll("#flow .node");
+  let flowTimer = null;
+  document.getElementById("btnFlow").addEventListener("click", () => {
+    clearInterval(flowTimer);
+    nodes.forEach(node => node.classList.remove("on"));
+    let index = 0;
+    flowTimer = setInterval(() => {
+      if (index >= nodes.length) { clearInterval(flowTimer); launchConfetti(60); return; }
+      nodes[index++].classList.add("on");
+    }, FLOW_STEP_MS);
+  });
+
+  /* ---------- Auto-cleanup mode simulator ---------- */
+  // Each moment of the day: [icon, label, kind]. kind: "" normal, "check" safe cleanup, "danger" cleanup during a game.
+  const DAYS = {
+    off: {
+      moments: [["🖥️", "Allumage", ""], ["🎮", "Partie de jeu", ""], ["🎮", "Encore une partie", ""], ["⏹️", "Extinction", ""]],
+      verdict: "😴 Bouclier éteint : le journal peut grossir sans que personne ne le vide."
+    },
+    session: {
+      moments: [["🖥️", "Allumage", ""], ["🧹", "Vérification", "check"], ["🎮", "Partie de jeu", ""], ["🎮", "Encore une partie", ""], ["🧹", "Vérification", "check"], ["⏹️", "Extinction", ""]],
+      verdict: "😎 Les vérifications ont lieu avant et après tes parties : aucun risque pour tes jeux."
+    },
+    every: {
+      moments: [["🖥️", "Allumage", ""], ["🧹", "Vérification", "check"], ["🎮", "Partie de jeu", ""], ["💥", "Vérification PENDANT le jeu !", "danger"], ["🎮", "Encore une partie", ""], ["⏹️", "Extinction", ""]],
+      verdict: "😬 Une vérification est tombée en pleine partie : le jeu risque de se figer ou de planter."
+    }
+  };
+  const dayLine = document.getElementById("dayLine");
+  const dayVerdict = document.getElementById("dayVerdict");
+  function showDay(mode) {
+    dayLine.innerHTML = "";
+    DAYS[mode].moments.forEach(([icon, label, kind], index) => {
+      if (index > 0) {
+        const arrow = document.createElement("span");
+        arrow.className = "day-arrow";
+        arrow.textContent = "➜";
+        dayLine.appendChild(arrow);
+      }
+      const moment = document.createElement("div");
+      moment.className = "moment " + kind;
+      moment.style.animationDelay = index * 0.12 + "s";
+      const iconEl = document.createElement("span");
+      iconEl.textContent = icon;
+      moment.append(iconEl, document.createTextNode(label));
+      dayLine.appendChild(moment);
+    });
+    dayVerdict.textContent = DAYS[mode].verdict;
+    dayVerdict.className = "day-verdict " + mode;
+  }
+  document.querySelectorAll('input[name="tryMode"]').forEach(radio => {
+    radio.addEventListener("change", () => showDay(radio.value));
+  });
+  showDay("off");
+
+  /* ---------- Mission checklist (saved in the browser) ---------- */
+  const boxes = document.querySelectorAll("#checklist input");
+  const trophy = document.getElementById("trophy");
+  const bar = document.getElementById("missionBar");
+  function loadChecklist() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+  }
+  function saveChecklist() {
+    const state = {};
+    boxes.forEach(box => { state[box.dataset.id] = box.checked; });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch { /* storage unavailable: progress is just not kept */ }
+  }
+  function updateChecklist(celebrate) {
+    const done = [...boxes].filter(box => box.checked).length;
+    boxes.forEach(box => box.closest("label").classList.toggle("done", box.checked));
+    bar.style.width = (done / boxes.length * 100) + "%";
+    const complete = done === boxes.length;
+    const wasShown = trophy.classList.contains("show");
+    trophy.classList.toggle("show", complete);
+    if (complete && !wasShown && celebrate) launchConfetti(180);
+  }
+  const saved = loadChecklist();
+  boxes.forEach(box => {
+    box.checked = Boolean(saved[box.dataset.id]);
+    box.addEventListener("change", () => { saveChecklist(); updateChecklist(true); });
+  });
+  updateChecklist(false);
+  document.getElementById("btnReset").addEventListener("click", () => {
+    boxes.forEach(box => { box.checked = false; });
+    saveChecklist();
+    updateChecklist(false);
+  });
+
+  /* ---------- Confetti ---------- */
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  const COLORS = ["#76e39b", "#ffd23f", "#6cb4ff", "#b48cff", "#ff6b6b", "#ffa94d"];
+  const GRAVITY = 0.12;
+  let pieces = [];
+  let animating = false;
+  function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+  function launchConfetti(count) {
+    if (reducedMotion) return;
+    for (let i = 0; i < count; i++) {
+      pieces.push({
+        x: canvas.width / 2, y: canvas.height / 3,
+        vx: (Math.random() - .5) * 16, vy: Math.random() * -12 - 4,
+        size: 6 + Math.random() * 8, rot: Math.random() * Math.PI, spin: (Math.random() - .5) * .3,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)]
+      });
+    }
+    if (!animating) { animating = true; requestAnimationFrame(drawConfetti); }
+  }
+  function drawConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      p.vy += GRAVITY; p.x += p.vx; p.y += p.vy; p.rot += p.spin; p.vx *= .99;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.fillStyle = p.color; ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      ctx.restore();
+    });
+    pieces = pieces.filter(p => p.y < canvas.height + 30);
+    if (pieces.length) requestAnimationFrame(drawConfetti);
+    else { animating = false; ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+})();
+</script>
+</body>
+</html>
